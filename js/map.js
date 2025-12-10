@@ -1,4 +1,5 @@
 let closestParkingMarker = null;
+let currentRouteTarget = null;
 
 // --- FOOTER YEAR ---
 document.getElementById("year").textContent = new Date().getFullYear();
@@ -91,51 +92,145 @@ function limpiarMarcadores() {
 }
 
 // --- DELETE A PARKING SPOT ---
-function eliminarPlaza(lat, lon) {
-  const markerIndex = parkingMarkers.findIndex(
+async function eliminarPlaza(lat, lon) {
+  // FIND MARKER
+  const index = parkingMarkers.findIndex(
     (m) => m.getLatLng().lat === lat && m.getLatLng().lng === lon
   );
 
-  if (markerIndex === -1) return;
+  if (index === -1) return;
 
-  // Remove marker from map
-  map.removeLayer(parkingMarkers[markerIndex]);
+  // REMOVE MARKER FROM MAP
+  map.removeLayer(parkingMarkers[index]);
+  parkingMarkers.splice(index, 1);
 
-  // Remove from array
-  parkingMarkers.splice(markerIndex, 1);
+  // IF DELETED PARKING WAS USED FOR ROUTE
+  if (
+    currentRouteTarget &&
+    currentRouteTarget.lat === lat &&
+    currentRouteTarget.lon === lon
+  ) {
+    console.log("Deleted active parking — rerouting...");
 
-  console.log("Plaza eliminada:", lat, lon);
+    if (parkingMarkers.length === 0) {
+      // No parking left → clear route
+      if (routingControl) map.removeControl(routingControl);
+      currentRouteTarget = null;
+      return;
+    }
+
+    // FIND NEXT CLOSEST PARKING TO DESTINATION MARKER
+    const destLat = window.destinationMarker.getLatLng().lat;
+    const destLon = window.destinationMarker.getLatLng().lng;
+
+    // HAVERSINE
+    function distance(aLat, aLon, bLat, bLon) {
+      const R = 6371;
+      const dLat = ((bLat - aLat) * Math.PI) / 180;
+      const dLon = ((bLon - aLon) * Math.PI) / 180;
+      const x =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((aLat * Math.PI) / 180) *
+          Math.cos((bLat * Math.PI) / 180) *
+          Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+    }
+
+    // CALCULATE CLOSEST REMAINING PARKING
+    let closestMarker = null;
+    let closestDist = Infinity;
+
+    parkingMarkers.forEach((marker) => {
+      const mLat = marker.getLatLng().lat;
+      const mLon = marker.getLatLng().lng;
+      const d = distance(destLat, destLon, mLat, mLon);
+      if (d < closestDist) {
+        closestDist = d;
+        closestMarker = marker;
+      }
+    });
+
+    // CREATE NEW ROUTE
+    crearRuta(closestMarker.getLatLng().lat, closestMarker.getLatLng().lng);
+
+    closestMarker.openPopup();
+  }
+}
+
+// --- GET DISTANCE & TIME FROM USER VIA OSRM ---
+async function obtenerRutaUsuario(lat, lon) {
+  if (!window.userLocation) return null;
+
+  const url =
+    `https://router.project-osrm.org/route/v1/driving/` +
+    `${window.userLocation.lon},${window.userLocation.lat};${lon},${lat}` +
+    `?overview=false&alternatives=false&steps=false`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.routes || !data.routes[0]) return null;
+
+    const route = data.routes[0];
+    return {
+      distanciaKm: (route.distance / 1000).toFixed(2),
+      duracionMin: Math.round(route.duration / 60),
+    };
+  } catch (e) {
+    console.error("Error fetching OSRM route:", e);
+    return null;
+  }
 }
 
 // --- ADD PARKING ---
-function agregarMarcadoresDeAparcamiento(plazas, closestParking) {
-  plazas.forEach((plaza) => {
+async function agregarMarcadoresDeAparcamiento(plazas, closestParking) {
+  for (const plaza of plazas) {
     const isClosest =
       closestParking &&
       plaza.lat === closestParking.lat &&
       plaza.lon === closestParking.lon;
 
+    // CREATE MARKER
     const marker = L.marker([plaza.lat, plaza.lon], {
       icon: isClosest ? closestParkingIcon : parkingIcon,
     }).addTo(map);
 
     parkingMarkers.push(marker);
 
+    // FETCH DISTANCE + TIME FROM USER
+    const info = await obtenerRutaUsuario(plaza.lat, plaza.lon);
+
+    let distanciaTexto = "Calculando...";
+    let duracionTexto = "";
+
+    if (info) {
+      distanciaTexto = `🛣 ${info.distanciaKm} km`;
+      duracionTexto = `⏱ ${info.duracionMin} min`;
+    }
+
+    // POPUP
     marker.bindPopup(`
-  <strong>${plaza.nombre}${isClosest ? " ⭐ (más cercano)" : ""}</strong><br>
-  📏 Ancho: ${plaza.ancho} m<br>
-  📐 Largo: ${plaza.largo} m<br><br>
+      <strong>${plaza.nombre}${
+      isClosest ? " ⭐ (más cercano)" : ""
+    }</strong><br>
+      📏 Ancho: ${plaza.ancho} m<br>
+      📐 Largo: ${plaza.largo} m<br><br>
 
-  <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
-    🧭 Ruta hasta aquí
-  </button><br><br>
+      <strong>Desde tu ubicación:</strong><br>
+      ${distanciaTexto}<br>
+      ${duracionTexto}<br><br>
 
-  <button onclick="eliminarPlaza(${plaza.lat}, ${plaza.lon})"
-          style="background:#d93025;color:white;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;">
-    ❌ Eliminar plaza
-  </button>
-`);
-  });
+      <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
+        🧭 Ruta hasta aquí
+      </button><br><br>
+
+      <button onclick="eliminarPlaza(${plaza.lat}, ${plaza.lon})"
+        style="background:#d93025;color:white;padding:6px 10px;
+        border:none;border-radius:6px;cursor:pointer;">
+        ❌ Eliminar plaza
+      </button>
+    `);
+  }
 }
 
 // --- ROUTING ---
@@ -144,6 +239,9 @@ function crearRuta(destLat, destLon) {
     alert("Ubicación del usuario no disponible.");
     return;
   }
+
+  // Save which parking we are routing to
+  currentRouteTarget = { lat: destLat, lon: destLon };
 
   // Remove previous route
   if (routingControl) map.removeControl(routingControl);
@@ -158,7 +256,7 @@ function crearRuta(destLat, destLon) {
       language: "es",
     }),
     showAlternatives: false,
-    lineOptions: { styles: [{ color: "purple", weight: 5 }] }, // PURPLE ROUTE
+    lineOptions: { styles: [{ color: "purple", weight: 5 }] },
     createMarker: () => null,
   }).addTo(map);
 }
