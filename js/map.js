@@ -90,6 +90,23 @@ function limpiarMarcadores() {
   parkingMarkers = [];
 }
 
+// --- DELETE A PARKING SPOT ---
+function eliminarPlaza(lat, lon) {
+  const markerIndex = parkingMarkers.findIndex(
+    (m) => m.getLatLng().lat === lat && m.getLatLng().lng === lon
+  );
+
+  if (markerIndex === -1) return;
+
+  // Remove marker from map
+  map.removeLayer(parkingMarkers[markerIndex]);
+
+  // Remove from array
+  parkingMarkers.splice(markerIndex, 1);
+
+  console.log("Plaza eliminada:", lat, lon);
+}
+
 // --- ADD PARKING ---
 function agregarMarcadoresDeAparcamiento(plazas, closestParking) {
   plazas.forEach((plaza) => {
@@ -105,16 +122,19 @@ function agregarMarcadoresDeAparcamiento(plazas, closestParking) {
     parkingMarkers.push(marker);
 
     marker.bindPopup(`
-      <strong>${plaza.nombre}${
-      isClosest ? " ⭐ (más cercano)" : ""
-    }</strong><br>
-      📏 Ancho: ${plaza.ancho} m<br>
-      📐 Largo: ${plaza.largo} m<br><br>
+  <strong>${plaza.nombre}${isClosest ? " ⭐ (más cercano)" : ""}</strong><br>
+  📏 Ancho: ${plaza.ancho} m<br>
+  📐 Largo: ${plaza.largo} m<br><br>
 
-      <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
-        🧭 Ruta hasta aquí
-      </button>
-    `);
+  <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
+    🧭 Ruta hasta aquí
+  </button><br><br>
+
+  <button onclick="eliminarPlaza(${plaza.lat}, ${plaza.lon})"
+          style="background:#d93025;color:white;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;">
+    ❌ Eliminar plaza
+  </button>
+`);
   });
 }
 
