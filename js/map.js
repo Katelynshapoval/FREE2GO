@@ -1,7 +1,9 @@
+let closestParkingMarker = null;
+
 // --- FOOTER YEAR ---
 document.getElementById("year").textContent = new Date().getFullYear();
 
-// --- RED USER ICON ---
+// --- ICONS ---
 const userIcon = L.icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
@@ -15,6 +17,26 @@ const userIcon = L.icon({
 const destinationIcon = L.icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const closestParkingIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const parkingIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -69,33 +91,28 @@ function limpiarMarcadores() {
 }
 
 // --- ADD PARKING ---
-// --- ADD PARKING ---
-function agregarMarcadoresDeAparcamiento(plazas) {
+function agregarMarcadoresDeAparcamiento(plazas, closestParking) {
   plazas.forEach((plaza) => {
-    const marker = L.marker([plaza.lat, plaza.lon]).addTo(map);
+    const isClosest =
+      closestParking &&
+      plaza.lat === closestParking.lat &&
+      plaza.lon === closestParking.lon;
+
+    const marker = L.marker([plaza.lat, plaza.lon], {
+      icon: isClosest ? closestParkingIcon : parkingIcon,
+    }).addTo(map);
 
     parkingMarkers.push(marker);
 
-    const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${plaza.lat},${plaza.lon}`;
-
     marker.bindPopup(`
-      <strong>${plaza.nombre}</strong><br>
+      <strong>${plaza.nombre}${
+      isClosest ? " ⭐ (más cercano)" : ""
+    }</strong><br>
       📏 Ancho: ${plaza.ancho} m<br>
       📐 Largo: ${plaza.largo} m<br><br>
 
       <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
         🧭 Ruta hasta aquí
-      </button><br><br>
-
-      <a href="${googleUrl}" target="_blank">
-        <button style="background:#34A853;color:white;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;">
-          ➡️ Abrir en Google Maps
-        </button>
-      </a><br><br>
-
-      <button onclick="eliminarPlaza(${plaza.lat}, ${plaza.lon})"
-              style="background:#d93025;color:white;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;">
-        ❌ Eliminar plaza
       </button>
     `);
   });
@@ -108,19 +125,9 @@ function crearRuta(destLat, destLon) {
     return;
   }
 
-  // Remove previous route and destination marker
+  // Remove previous route
   if (routingControl) map.removeControl(routingControl);
-  if (window.destinationMarker) map.removeLayer(window.destinationMarker);
 
-  // Add green destination marker
-  window.destinationMarker = L.marker([destLat, destLon], {
-    icon: destinationIcon,
-  })
-    .addTo(map)
-    .bindPopup("📍 Destino") // temporary popup
-    .openPopup();
-
-  // Create route
   routingControl = L.Routing.control({
     waypoints: [
       L.latLng(window.userLocation.lat, window.userLocation.lon),
@@ -131,22 +138,9 @@ function crearRuta(destLat, destLon) {
       language: "es",
     }),
     showAlternatives: false,
-    lineOptions: { styles: [{ color: "#008cff", weight: 5 }] },
-    createMarker: () => null, // prevent default blue markers
-  })
-    .on("routesfound", function (e) {
-      const route = e.routes[0];
-      const distanceKm = (route.summary.totalDistance / 1000).toFixed(2);
-      const durationMin = Math.round(route.summary.totalTime / 60);
-
-      // Update destination popup with distance & time
-      window.destinationMarker
-        .bindPopup(
-          `📍 Destino<br>🛣 Distancia: ${distanceKm} km<br>⏱ Duración: ${durationMin} min`
-        )
-        .openPopup();
-    })
-    .addTo(map);
+    lineOptions: { styles: [{ color: "purple", weight: 5 }] }, // PURPLE ROUTE
+    createMarker: () => null,
+  }).addTo(map);
 }
 
 // --- SET USER LOCATION ---
@@ -154,20 +148,13 @@ function establecerUbicacionUsuario(lat, lon) {
   window.userLocation = { lat, lon };
   map.setView([lat, lon], 15);
 
-  // RED PIN
   L.marker([lat, lon], { icon: userIcon })
     .addTo(map)
     .bindPopup("📍 Estás aquí")
     .openPopup();
 
-  // PARKING NEAR USER
   const plazas = generarPlazasAleatorias(lat, lon, 6);
   agregarMarcadoresDeAparcamiento(plazas);
-}
-
-function abrirGoogleMaps(lat, lon) {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-  window.open(url, "_blank");
 }
 
 // --- SEARCH FUNCTION ---
@@ -192,7 +179,7 @@ async function buscarDireccion() {
     return;
   }
 
-  // --- HAVERSINE DISTANCE ---
+  // --- HAVERSINE ---
   function distance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -207,19 +194,8 @@ async function buscarDireccion() {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
-  function eliminarPlaza(lat, lon) {
-    const marker = parkingMarkers.find(
-      (m) => m.getLatLng().lat === lat && m.getLatLng().lng === lon
-    );
-
-    if (marker) {
-      map.removeLayer(marker);
-      parkingMarkers = parkingMarkers.filter((m) => m !== marker);
-    }
-  }
-
-  // --- PICK THE CLOSEST MATCH ---
-  const closest = results.reduce(
+  // Pick closest match
+  const closestDest = results.reduce(
     (best, place) => {
       const dist = distance(
         Number(window.userLocation.lat),
@@ -232,27 +208,58 @@ async function buscarDireccion() {
     { place: null, dist: Infinity }
   ).place;
 
-  const destLat = Number(closest.lat);
-  const destLon = Number(closest.lon);
+  const destLat = Number(closestDest.lat);
+  const destLon = Number(closestDest.lon);
 
-  // ROUTE TO DESTINATION
-  crearRuta(destLat, destLon);
-
-  // CLEAR & ADD PARKING NEAR DESTINATION
-  limpiarMarcadores();
-  agregarMarcadoresDeAparcamiento(generarPlazasAleatorias(destLat, destLon, 6));
-
-  // Center map
   map.setView([destLat, destLon], 15);
+
+  // --- GREEN DESTINATION MARKER ---
+  if (window.destinationMarker) map.removeLayer(window.destinationMarker);
+
+  window.destinationMarker = L.marker([destLat, destLon], {
+    icon: destinationIcon,
+  })
+    .addTo(map)
+    .bindPopup("📍 Destino seleccionado")
+    .openPopup();
+
+  // CLEAR OLD PARKING
+  limpiarMarcadores();
+
+  // GENERATE NEW PARKINGS
+  const parkings = generarPlazasAleatorias(destLat, destLon, 6);
+
+  // FIND CLOSEST PARKING
+  const closestParking = parkings.reduce(
+    (best, p) => {
+      const dist = distance(destLat, destLon, p.lat, p.lon);
+      return dist < best.dist ? { spot: p, dist } : best;
+    },
+    { spot: null, dist: Infinity }
+  ).spot;
+
+  // ADD PARKING MARKERS
+  agregarMarcadoresDeAparcamiento(parkings, closestParking);
+
+  // ROUTE USER → CLOSEST PARKING
+  crearRuta(closestParking.lat, closestParking.lon);
+
+  // OPEN POPUP
+  const marker = parkingMarkers.find(
+    (m) =>
+      m.getLatLng().lat === closestParking.lat &&
+      m.getLatLng().lng === closestParking.lon
+  );
+  if (marker) marker.openPopup();
 }
 
-// --- SEARCH BUTTON EVENTS ---
+// --- BUTTON LISTENERS ---
 document.getElementById("searchBtn").addEventListener("click", buscarDireccion);
 document.getElementById("addressInput").addEventListener("keypress", (e) => {
   if (e.key === "Enter") buscarDireccion();
 });
 
-// --- GET INITIAL USER LOCATION ---
+// --- INITIAL LOCATION ---
 navigator.geolocation.getCurrentPosition(
   (pos) =>
     establecerUbicacionUsuario(pos.coords.latitude, pos.coords.longitude),
