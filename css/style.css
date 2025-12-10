@@ -70,6 +70,19 @@ header {
   width: 200px;
 }
 
+/* Main */
+main {
+  padding-top: 80px;
+  /* padding-bottom: 20px; */
+}
+
+/* Map container */
+#map {
+  height: 400px;
+  width: 500px;
+  margin: 20px 0;
+}
+
 /* Footer */
 footer {
   background-color: #434e78;
@@ -85,7 +98,7 @@ footer {
   bottom: 0;
 }
 
-.rights {
+.copyright {
   width: 100%;
   text-align: center;
 }

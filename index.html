@@ -6,6 +6,15 @@
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="shortcut icon" href="./images/logo.png" type="image/x-icon" />
     <title>FREE2GO</title>
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   </head>
   <body>
     <header>
@@ -51,15 +60,27 @@
       </div>
       <div class="spacer"></div>
     </header>
+
     <main>
-      <p>lol</p>
+      <!-- Map container -->
+      <div id="map"></div>
     </main>
+
     <footer>
       <p>Instant parking, greener driving.</p>
-      <div class="rights">
+      <div class="copyright">
         <hr />
         <p>&copy; <span id="year"></span> FREE2GO. All rights reserved.</p>
       </div>
     </footer>
+
+    <!-- Leaflet JS -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-o9N1j6E5I2k2k0QEx8Bfy2Dzhx35e0vCkz6tXk5R4zU="
+      crossorigin=""
+    ></script>
+
+    <script src="./js/map.js"></script>
   </body>
 </html>
