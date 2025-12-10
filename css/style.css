@@ -1,0 +1,47 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header */
+header {
+  background-color: #434e78;
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  padding: 20px;
+  font-size: 30px;
+  color: white;
+  position: fixed;
+  width: 100%;
+}
+
+#logo {
+  height: 50px;
+}
+
+/* Footer */
+footer {
+  background-color: #434e78;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  font-size: 18px;
+  color: white;
+  position: fixed;
+  flex-direction: column;
+  width: 100%;
+  bottom: 0;
+}
+
+.rights {
+  width: 100%;
+  text-align: center;
+}
+
+hr {
+  width: 100%;
+  margin-bottom: 10px;
+}
