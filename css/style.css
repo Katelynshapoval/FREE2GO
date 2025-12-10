@@ -1,18 +1,19 @@
+/* Global Styles */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* Header */
+/* Header  */
 header {
   background-color: #434e78;
+  color: white;
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 50px;
   padding: 20px;
-  font-size: 30px;
-  color: white;
   position: fixed;
   width: 100%;
 }
@@ -21,17 +22,65 @@ header {
   height: 50px;
 }
 
+.appInfo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 30px;
+}
+
+/* Filter Section */
+.filter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 14px;
+  color: white;
+}
+
+.filter label {
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.filter select {
+  width: 290px;
+  padding: 8px 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #434e78;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* Hover and focus effects */
+.filter select:hover {
+  background-color: #f1f1f1;
+}
+
+.filter select:focus {
+  box-shadow: 0 0 6px rgba(67, 78, 120, 0.8);
+}
+
+.spacer {
+  width: 200px;
+}
+
 /* Footer */
 footer {
   background-color: #434e78;
+  color: white;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 10px;
   padding: 20px;
   font-size: 18px;
-  color: white;
   position: fixed;
-  flex-direction: column;
   width: 100%;
   bottom: 0;
 }

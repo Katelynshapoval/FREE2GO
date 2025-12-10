@@ -9,8 +9,47 @@
   </head>
   <body>
     <header>
-      <img id="logo" src="./images/logo.png" alt="Logo" />
-      <p>FREE2GO</p>
+      <div class="appInfo">
+        <img id="logo" src="./images/logo.png" alt="Logo" />
+        <p>FREE2GO</p>
+      </div>
+      <div class="filter">
+        <label for="car-model">Elige un modelo de coche:</label>
+        <select id="car-model" name="car-model">
+          <option value="">-- Selecciona un modelo --</option>
+
+          <optgroup label="Toyota">
+            <option value="corolla">Corolla</option>
+            <option value="camry">Camry</option>
+            <option value="rav4">RAV4</option>
+          </optgroup>
+
+          <optgroup label="Honda">
+            <option value="civic">Civic</option>
+            <option value="accord">Accord</option>
+            <option value="crv">CR-V</option>
+          </optgroup>
+
+          <optgroup label="Ford">
+            <option value="focus">Focus</option>
+            <option value="mustang">Mustang</option>
+            <option value="escape">Escape</option>
+          </optgroup>
+
+          <optgroup label="BMW">
+            <option value="3-series">Serie 3</option>
+            <option value="5-series">Serie 5</option>
+            <option value="x3">X3</option>
+          </optgroup>
+
+          <optgroup label="Mercedes">
+            <option value="c-class">Clase C</option>
+            <option value="e-class">Clase E</option>
+            <option value="gle">GLE</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="spacer"></div>
     </header>
     <main>
       <p>lol</p>
