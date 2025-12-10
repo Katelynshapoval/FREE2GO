@@ -69,17 +69,34 @@ function limpiarMarcadores() {
 }
 
 // --- ADD PARKING ---
+// --- ADD PARKING ---
 function agregarMarcadoresDeAparcamiento(plazas) {
   plazas.forEach((plaza) => {
     const marker = L.marker([plaza.lat, plaza.lon]).addTo(map);
 
     parkingMarkers.push(marker);
 
+    const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${plaza.lat},${plaza.lon}`;
+
     marker.bindPopup(`
       <strong>${plaza.nombre}</strong><br>
       📏 Ancho: ${plaza.ancho} m<br>
       📐 Largo: ${plaza.largo} m<br><br>
-      <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">🧭 Ruta hasta aquí</button>
+
+      <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
+        🧭 Ruta hasta aquí
+      </button><br><br>
+
+      <a href="${googleUrl}" target="_blank">
+        <button style="background:#34A853;color:white;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;">
+          ➡️ Abrir en Google Maps
+        </button>
+      </a><br><br>
+
+      <button onclick="eliminarPlaza(${plaza.lat}, ${plaza.lon})"
+              style="background:#d93025;color:white;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;">
+        ❌ Eliminar plaza
+      </button>
     `);
   });
 }
@@ -148,6 +165,11 @@ function establecerUbicacionUsuario(lat, lon) {
   agregarMarcadoresDeAparcamiento(plazas);
 }
 
+function abrirGoogleMaps(lat, lon) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+  window.open(url, "_blank");
+}
+
 // --- SEARCH FUNCTION ---
 async function buscarDireccion() {
   const address = document.getElementById("addressInput").value;
@@ -183,6 +205,17 @@ async function buscarDireccion() {
         Math.sin(dLon / 2) ** 2;
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  }
+
+  function eliminarPlaza(lat, lon) {
+    const marker = parkingMarkers.find(
+      (m) => m.getLatLng().lat === lat && m.getLatLng().lng === lon
+    );
+
+    if (marker) {
+      map.removeLayer(marker);
+      parkingMarkers = parkingMarkers.filter((m) => m !== marker);
+    }
   }
 
   // --- PICK THE CLOSEST MATCH ---
