@@ -105,6 +105,7 @@ async function eliminarPlaza(lat, lon) {
   parkingMarkers.splice(index, 1);
 
   // IF DELETED PARKING WAS USED FOR ROUTE
+  // IF DELETED PARKING WAS USED FOR ROUTE
   if (
     currentRouteTarget &&
     currentRouteTarget.lat === lat &&
@@ -113,17 +114,15 @@ async function eliminarPlaza(lat, lon) {
     console.log("Deleted active parking — rerouting...");
 
     if (parkingMarkers.length === 0) {
-      // No parking left → clear route
       if (routingControl) map.removeControl(routingControl);
       currentRouteTarget = null;
       return;
     }
 
-    // FIND NEXT CLOSEST PARKING TO DESTINATION MARKER
+    // FIND NEXT CLOSEST PARKING (Haversine)
     const destLat = window.destinationMarker.getLatLng().lat;
     const destLon = window.destinationMarker.getLatLng().lng;
 
-    // HAVERSINE
     function distance(aLat, aLon, bLat, bLon) {
       const R = 6371;
       const dLat = ((bLat - aLat) * Math.PI) / 180;
@@ -136,7 +135,6 @@ async function eliminarPlaza(lat, lon) {
       return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
     }
 
-    // CALCULATE CLOSEST REMAINING PARKING
     let closestMarker = null;
     let closestDist = Infinity;
 
@@ -144,17 +142,36 @@ async function eliminarPlaza(lat, lon) {
       const mLat = marker.getLatLng().lat;
       const mLon = marker.getLatLng().lng;
       const d = distance(destLat, destLon, mLat, mLon);
+
       if (d < closestDist) {
         closestDist = d;
         closestMarker = marker;
       }
     });
 
-    // CREATE NEW ROUTE
+    // ⭐ RECOLOR ALL MARKERS
+    recolorearParkings(
+      closestMarker.getLatLng().lat,
+      closestMarker.getLatLng().lng
+    );
+
+    // ⭐ CREATE NEW ROUTE
     crearRuta(closestMarker.getLatLng().lat, closestMarker.getLatLng().lng);
 
     closestMarker.openPopup();
   }
+}
+
+function recolorearParkings(nuevoLat, nuevoLon) {
+  parkingMarkers.forEach((marker) => {
+    const { lat, lng } = marker.getLatLng();
+
+    if (lat === nuevoLat && lng === nuevoLon) {
+      marker.setIcon(closestParkingIcon); // Make purple
+    } else {
+      marker.setIcon(parkingIcon); // Make grey
+    }
+  });
 }
 
 // --- GET DISTANCE & TIME FROM USER VIA OSRM ---
