@@ -1,109 +1,181 @@
-/* Global Styles */
+/* GLOBAL */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: "Inter", sans-serif;
 }
 
-/* Header  */
+body {
+  background-color: #0f1117;
+  color: white;
+}
+
+/* HEADER */
 header {
-  background-color: #434e78;
+  background: rgba(15, 18, 30, 0.75);
+  backdrop-filter: blur(10px);
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 50px;
-  padding: 20px;
+  padding: 18px 45px;
   position: fixed;
+  top: 0;
   width: 100%;
+  z-index: 999;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Logo + Text */
 #logo {
   height: 50px;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.3));
+  transition: transform 0.2s ease-in-out;
+}
+
+#logo:hover {
+  transform: scale(1.07);
 }
 
 .appInfo {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  font-size: 30px;
-}
-
-/* Filter Section */
-.filter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 14px;
-  color: white;
-}
-
-.filter label {
-  margin-bottom: 5px;
+  font-size: 26px;
   font-weight: 600;
+  letter-spacing: 1px;
 }
 
-.filter select {
-  width: 290px;
-  padding: 8px 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 6px;
-  background-color: #fff;
-  color: #434e78;
-  text-align: center;
+/* USER ICON */
+.userIcon img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 4px;
+  background: #1e2330;
   cursor: pointer;
-  outline: none;
-  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: 0.2s ease-in-out;
 }
 
-/* Hover and focus effects */
-.filter select:hover {
-  background-color: #f1f1f1;
+.userIcon img:hover {
+  transform: scale(1.12);
+  background: #2a3040;
 }
 
-.filter select:focus {
-  box-shadow: 0 0 6px rgba(67, 78, 120, 0.8);
-}
-
-.spacer {
-  width: 200px;
-}
-
-/* Main */
+/* MAIN LAYOUT */
 main {
+  display: flex;
+  height: calc(100vh - 80px);
   padding-top: 80px;
-  /* padding-bottom: 20px; */
 }
 
-/* Map container */
-#map {
-  height: 500px;
-  width: 100%;
-  margin: 20px 0;
-}
-
-/* Footer */
-footer {
-  background-color: #434e78;
+/* SIDEBAR */
+.sidebar {
+  width: 300px;
+  background: #131722;
   color: white;
+  padding: 25px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 20px;
-  font-size: 18px;
-  position: fixed;
-  width: 100%;
-  bottom: 0;
+  gap: 18px;
+  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
 }
 
-.copyright {
-  width: 100%;
-  text-align: center;
-}
-
-hr {
-  width: 100%;
+.sidebar h3 {
   margin-bottom: 10px;
+  font-size: 20px;
+  color: #72aaff;
+}
+
+/* Sidebar Inputs */
+.sidebar label {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.sidebar select,
+.sidebar input {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #1e2330;
+  color: white;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.sidebar input::placeholder {
+  color: #b8bdcc;
+}
+
+.sidebar input:focus {
+  box-shadow: 0 0 10px rgba(0, 140, 255, 0.6);
+}
+
+.sidebar button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #008cff;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.sidebar button:hover {
+  background: #0a6cd1;
+  transform: scale(1.03);
+}
+
+/* MAP */
+#map {
+  flex-grow: 1;
+  height: 100%;
+  border-radius: 10px;
+  animation: fadeIn 1s ease forwards;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+}
+
+/* FOOTER */
+footer {
+  background: #0f1117;
+  color: white;
+  padding: 25px;
+  font-size: 15px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+footer p {
+  opacity: 0.8;
+}
+
+footer hr {
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 90%;
+  margin: 10px auto;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.leaflet-marker-icon[src*="marker-icon-red"] {
+  filter: none !important;
 }

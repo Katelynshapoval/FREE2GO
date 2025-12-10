@@ -13,17 +13,37 @@
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+    />
   </head>
+
   <body>
+    <!-- HEADER -->
     <header>
       <div class="appInfo">
         <img id="logo" src="./images/logo.png" alt="Logo" />
         <p>FREE2GO</p>
       </div>
-      <div class="filter">
-        <label for="car-model">Elige un modelo de coche:</label>
+
+      <div class="userIcon">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+          alt="User"
+        />
+      </div>
+    </header>
+
+    <!-- MAIN (Sidebar + Map) -->
+    <main>
+      <!-- LEFT SIDEBAR -->
+      <div class="sidebar">
+        <h3>Panel</h3>
+
+        <!-- Car Model Selector -->
+        <label for="car-model">Modelo de coche:</label>
         <select id="car-model" name="car-model">
           <option value="">-- Selecciona un modelo --</option>
 
@@ -57,15 +77,22 @@
             <option value="gle">GLE</option>
           </optgroup>
         </select>
-      </div>
-      <div class="spacer"></div>
-    </header>
 
-    <main>
-      <!-- Map container -->
+        <!-- Address Search -->
+        <label for="addressInput" class="sidebarLabel">Buscar dirección:</label>
+        <input
+          type="text"
+          id="addressInput"
+          placeholder="Introduce una dirección..."
+        />
+        <button id="searchBtn">Buscar</button>
+      </div>
+
+      <!-- MAP -->
       <div id="map"></div>
     </main>
 
+    <!-- FOOTER -->
     <footer>
       <p>Instant parking, greener driving.</p>
       <div class="copyright">
@@ -75,12 +102,12 @@
     </footer>
 
     <!-- Leaflet JS -->
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-o9N1j6E5I2k2k0QEx8Bfy2Dzhx35e0vCkz6tXk5R4zU="
-      crossorigin=""
-    ></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <!-- Leaflet Routing Machine -->
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Your Map Logic -->
     <script src="./js/map.js"></script>
   </body>
 </html>
