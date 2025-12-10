@@ -12,6 +12,16 @@ const userIcon = L.icon({
   shadowSize: [41, 41],
 });
 
+const destinationIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 // --- GLOBAL STATE ---
 let routingControl = null;
 let parkingMarkers = [];
@@ -77,12 +87,23 @@ function agregarMarcadoresDeAparcamiento(plazas) {
 // --- ROUTING ---
 function crearRuta(destLat, destLon) {
   if (!window.userLocation) {
-    alert("Ubicación no disponible.");
+    alert("Ubicación del usuario no disponible.");
     return;
   }
 
+  // Remove previous route and destination marker
   if (routingControl) map.removeControl(routingControl);
+  if (window.destinationMarker) map.removeLayer(window.destinationMarker);
 
+  // Add green destination marker
+  window.destinationMarker = L.marker([destLat, destLon], {
+    icon: destinationIcon,
+  })
+    .addTo(map)
+    .bindPopup("📍 Destino") // temporary popup
+    .openPopup();
+
+  // Create route
   routingControl = L.Routing.control({
     waypoints: [
       L.latLng(window.userLocation.lat, window.userLocation.lon),
@@ -94,12 +115,21 @@ function crearRuta(destLat, destLon) {
     }),
     showAlternatives: false,
     lineOptions: { styles: [{ color: "#008cff", weight: 5 }] },
+    createMarker: () => null, // prevent default blue markers
+  })
+    .on("routesfound", function (e) {
+      const route = e.routes[0];
+      const distanceKm = (route.summary.totalDistance / 1000).toFixed(2);
+      const durationMin = Math.round(route.summary.totalTime / 60);
 
-    // 👇 IMPORTANT: Prevent Leaflet Routing from adding BLUE MARKERS
-    createMarker: function () {
-      return null;
-    },
-  }).addTo(map);
+      // Update destination popup with distance & time
+      window.destinationMarker
+        .bindPopup(
+          `📍 Destino<br>🛣 Distancia: ${distanceKm} km<br>⏱ Duración: ${durationMin} min`
+        )
+        .openPopup();
+    })
+    .addTo(map);
 }
 
 // --- SET USER LOCATION ---
