@@ -176,6 +176,21 @@ footer hr {
   }
 }
 
+.leaflet-routing-container {
+  background: #1e2330 !important;
+  color: white !important;
+}
+
+.leaflet-routing-alt,
+.leaflet-routing-tooltip,
+.leaflet-routing-instruction {
+  color: white !important;
+}
+
+.leaflet-routing-icon {
+  filter: brightness(200%) !important;
+}
+
 .leaflet-marker-icon[src*="marker-icon-red"] {
   filter: none !important;
 }

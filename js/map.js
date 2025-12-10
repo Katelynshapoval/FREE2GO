@@ -1,7 +1,7 @@
-// Establecer el año actual en el footer
+// --- FOOTER YEAR ---
 document.getElementById("year").textContent = new Date().getFullYear();
 
-// Custom red icon for the user's location
+// --- RED USER ICON ---
 const userIcon = L.icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
@@ -12,80 +12,113 @@ const userIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-// ROUTING CONTROL HOLDER
+// --- GLOBAL STATE ---
 let routingControl = null;
+let parkingMarkers = [];
+window.userLocation = null;
 
-// Inicializar el mapa
+// --- MAP INIT ---
 const map = L.map("map").setView([0, 0], 13);
 
-// Añadir tiles
+// --- TILE LAYER ---
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
 }).addTo(map);
 
-// Generate parking spots
-function generarPlazasAleatorias(lat, lon, cantidad = 5) {
+// --- LOCATE BUTTON ---
+L.control
+  .locate({
+    position: "topleft",
+    flyTo: true,
+    strings: { title: "Mostrar mi ubicación" },
+  })
+  .addTo(map);
+
+// --- RANDOM PARKING SPOTS ---
+function generarPlazasAleatorias(lat, lon, cantidad = 6) {
   const plazas = [];
-
   for (let i = 0; i < cantidad; i++) {
-    const latAleatoria = lat + (Math.random() - 0.5) * 0.005;
-    const lonAleatoria = lon + (Math.random() - 0.5) * 0.005;
-
-    const ancho = (2.0 + Math.random() * 0.6).toFixed(2);
-    const largo = (4.5 + Math.random() * 1.0).toFixed(2);
+    const latA = lat + (Math.random() - 0.5) * 0.004;
+    const lonA = lon + (Math.random() - 0.5) * 0.004;
 
     plazas.push({
-      lat: latAleatoria,
-      lon: lonAleatoria,
-      nombre: `Plaza de Aparcamiento ${i + 1}`,
-      ancho,
-      largo,
+      lat: latA,
+      lon: lonA,
+      nombre: `Plaza ${i + 1}`,
+      ancho: (2 + Math.random() * 0.6).toFixed(2),
+      largo: (4.5 + Math.random()).toFixed(2),
     });
   }
-
   return plazas;
 }
 
-// Add parking markers
+// --- CLEAR PARKING ---
+function limpiarMarcadores() {
+  parkingMarkers.forEach((m) => map.removeLayer(m));
+  parkingMarkers = [];
+}
+
+// --- ADD PARKING ---
 function agregarMarcadoresDeAparcamiento(plazas) {
   plazas.forEach((plaza) => {
-    const marcador = L.marker([plaza.lat, plaza.lon]).addTo(map);
+    const marker = L.marker([plaza.lat, plaza.lon]).addTo(map);
 
-    marcador.bindPopup(`
+    parkingMarkers.push(marker);
+
+    marker.bindPopup(`
       <strong>${plaza.nombre}</strong><br>
-      📏 Ancho: <strong>${plaza.ancho} m</strong><br>
-      📐 Largo: <strong>${plaza.largo} m</strong><br><br>
-      <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">
-        🧭 Ruta hasta aquí
-      </button>
+      📏 Ancho: ${plaza.ancho} m<br>
+      📐 Largo: ${plaza.largo} m<br><br>
+      <button onclick="crearRuta(${plaza.lat}, ${plaza.lon})">🧭 Ruta hasta aquí</button>
     `);
   });
 }
 
-// ROUTE GENERATOR
+// --- ROUTING ---
 function crearRuta(destLat, destLon) {
   if (!window.userLocation) {
-    alert("Ubicación del usuario no disponible.");
+    alert("Ubicación no disponible.");
     return;
   }
 
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
+  if (routingControl) map.removeControl(routingControl);
 
   routingControl = L.Routing.control({
     waypoints: [
       L.latLng(window.userLocation.lat, window.userLocation.lon),
       L.latLng(destLat, destLon),
     ],
-    routeWhileDragging: false,
-    lineOptions: {
-      styles: [{ color: "#008cff", weight: 5 }],
+    router: L.Routing.osrmv1({
+      serviceUrl: "https://router.project-osrm.org/route/v1",
+      language: "es",
+    }),
+    showAlternatives: false,
+    lineOptions: { styles: [{ color: "#008cff", weight: 5 }] },
+
+    // 👇 IMPORTANT: Prevent Leaflet Routing from adding BLUE MARKERS
+    createMarker: function () {
+      return null;
     },
   }).addTo(map);
 }
 
-// GEOCODING: Search address → route
+// --- SET USER LOCATION ---
+function establecerUbicacionUsuario(lat, lon) {
+  window.userLocation = { lat, lon };
+  map.setView([lat, lon], 15);
+
+  // RED PIN
+  L.marker([lat, lon], { icon: userIcon })
+    .addTo(map)
+    .bindPopup("📍 Estás aquí")
+    .openPopup();
+
+  // PARKING NEAR USER
+  const plazas = generarPlazasAleatorias(lat, lon, 6);
+  agregarMarcadoresDeAparcamiento(plazas);
+}
+
+// --- SEARCH FUNCTION ---
 async function buscarDireccion() {
   const address = document.getElementById("addressInput").value;
   if (!address) return;
@@ -95,79 +128,70 @@ async function buscarDireccion() {
     return;
   }
 
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+  const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=es&q=${encodeURIComponent(
     address
   )}`;
 
-  const response = await fetch(url);
-  const results = await response.json();
+  const res = await fetch(url);
+  const results = await res.json();
 
   if (results.length === 0) {
-    alert("No se encontraron coincidencias.");
+    alert("No se encontró ninguna coincidencia.");
     return;
   }
 
-  // Function to calculate distance (Haversine)
+  // --- HAVERSINE DISTANCE ---
   function distance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
-  // Pick the closest result to user
+  // --- PICK THE CLOSEST MATCH ---
   const closest = results.reduce(
-    (closestSoFar, place) => {
+    (best, place) => {
       const dist = distance(
-        window.userLocation.lat,
-        window.userLocation.lon,
-        place.lat,
-        place.lon
+        Number(window.userLocation.lat),
+        Number(window.userLocation.lon),
+        Number(place.lat),
+        Number(place.lon)
       );
-      return dist < closestSoFar.dist ? { place, dist } : closestSoFar;
+      return dist < best.dist ? { place, dist } : best;
     },
     { place: null, dist: Infinity }
   ).place;
 
-  // Start the route
-  crearRuta(closest.lat, closest.lon);
+  const destLat = Number(closest.lat);
+  const destLon = Number(closest.lon);
+
+  // ROUTE TO DESTINATION
+  crearRuta(destLat, destLon);
+
+  // CLEAR & ADD PARKING NEAR DESTINATION
+  limpiarMarcadores();
+  agregarMarcadoresDeAparcamiento(generarPlazasAleatorias(destLat, destLon, 6));
+
+  // Center map
+  map.setView([destLat, destLon], 15);
 }
 
-// Handle search button
+// --- SEARCH BUTTON EVENTS ---
 document.getElementById("searchBtn").addEventListener("click", buscarDireccion);
 document.getElementById("addressInput").addEventListener("keypress", (e) => {
   if (e.key === "Enter") buscarDireccion();
 });
 
-// Obtain user location
-if ("geolocation" in navigator) {
-  navigator.geolocation.getCurrentPosition(
-    (posicion) => {
-      const lat = posicion.coords.latitude;
-      const lon = posicion.coords.longitude;
-
-      window.userLocation = { lat, lon };
-
-      map.setView([lat, lon], 15);
-
-      L.marker([lat, lon], { icon: userIcon })
-        .addTo(map)
-        .bindPopup("📍 Estás aquí")
-        .openPopup();
-
-      const plazas = generarPlazasAleatorias(lat, lon, 6);
-      agregarMarcadoresDeAparcamiento(plazas);
-    },
-    () => {
-      alert("No se pudo obtener tu ubicación.");
-    }
-  );
-}
+// --- GET INITIAL USER LOCATION ---
+navigator.geolocation.getCurrentPosition(
+  (pos) =>
+    establecerUbicacionUsuario(pos.coords.latitude, pos.coords.longitude),
+  () => establecerUbicacionUsuario(40.4168, -3.7038) // fallback Madrid
+);
